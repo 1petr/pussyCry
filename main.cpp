@@ -8,9 +8,46 @@
 #include <windows.h>
 #include <wincrypt.h>
 #include <stdio.h>
+#include <tchar.h>
 
 int main(int argv, char *argc[])
 {
+    //Поиск файла по маске
+ /*   WIN32_FIND_DATA FindFileData;
+    LARGE_INTEGER filesize;
+    HANDLE hFind;
+
+    LPCTSTR lpzMaskFile = L"*.o";
+
+    hFind = FindFirstFile(lpzMaskFile, &FindFileData);
+    if (hFind == INVALID_HANDLE_VALUE)
+    {
+        printf("FindFirstFile failed %d\n", GetLastError());
+    }
+    else
+    {
+        _tprintf(TEXT("The first file found is %s\n"),FindFileData.cFileName);
+    }
+
+    do
+    {
+       if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+       {
+          _tprintf(TEXT("%s   <DIR>\n"), FindFileData.cFileName);
+       }
+       else
+       {
+          filesize.LowPart = FindFileData.nFileSizeLow;
+          filesize.HighPart = FindFileData.nFileSizeHigh;
+          _tprintf(TEXT("%s   %ld bytes\n"), FindFileData.cFileName, filesize.QuadPart);
+       }
+    }
+    while (FindNextFile(hFind, &FindFileData) != 0);
+
+    FindClose(hFind);
+*/
+    //---------------------------------------------------------
+
     //char* to wchar_t*
     const size_t size = strlen(argc[2]) + 1;
     wchar_t* wPass = new wchar_t[size];
