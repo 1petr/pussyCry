@@ -179,6 +179,7 @@ Cleanup:
     fclose(f);
     fclose(sf);
     fclose(svf);
+    delete[] wPass;
 
     return 0;
 }
