@@ -1,2 +1,5 @@
 *.pro
 *.pro.user
+*.txt.user
+Makefile
+/build
