@@ -17,7 +17,7 @@ int main(int argv, char *argc[])
 {
     char *pass = "password";
 
-    //èÆ®·™ ‰†©´† ØÆ ¨†·™•
+    //–ü–æ–∏—Å–∫ —Ñ–∞–π–ª–∞ –ø–æ –º–∞—Å–∫–µ
     WIN32_FIND_DATA FindFileData;
     LARGE_INTEGER filesize;
     HANDLE hFind;
@@ -50,7 +50,7 @@ int main(int argv, char *argc[])
           //filesize.HighPart = FindFileData.nFileSizeHigh;
           _tprintf(TEXT("%s\n"), FindFileData.cFileName/*, filesize.QuadPart*/);
 
-          //ò®‡Æ¢†≠®• ≠†©§•≠Æ£Æ ‰†©´†
+          //–®–∏—Ä–æ–≤–∞–Ω–∏–µ –Ω–∞–π–¥–µ–Ω–æ–≥–æ —Ñ–∞–π–ª–∞
           EncryptMyFile(FindFileData.cFileName, pass);
        }
     }
@@ -70,21 +70,21 @@ void EncryptMyFile(WCHAR *nameFile, char* password)
     wchar_t* wPass = new wchar_t[size];
     mbstowcs(wPass, password, size);
 
-    HCRYPTPROV hProv = 0; //Ñ•·™‡®Ø‚Æ‡ ™‡®Ø‡‚ÆØ‡Æ¢†©§•‡†
-    HCRYPTKEY hKey = 0;   //Ñ•·™‡®Ø‚Æ‡ ™´ÓÁ†
-    HCRYPTHASH hHash = 0; //Ñ•·™‡®Ø‚Æ‡ ÂÌË-Æ°Í•™‚†
-    DWORD dwCount = 16;   //ê†ß¨•‡ °´Æ™†
-    BYTE dwData[32];      //Å´Æ™ §†≠≠ÎÂ (°´Æ™ + 16 °†©‚ ≠•®ß¢•·‚≠Æ© ®≠‰Æ‡¨†Ê®® Æ‚ CryptEncrypt())
+    HCRYPTPROV hProv = 0; //–î–µ—Å–∫—Ä–∏–ø—Ç–æ—Ä –∫—Ä–∏–ø—Ä—Ç–æ–ø—Ä–æ–≤–∞–π–¥–µ—Ä–∞
+    HCRYPTKEY hKey = 0;   //–î–µ—Å–∫—Ä–∏–ø—Ç–æ—Ä –∫–ª—é—á–∞
+    HCRYPTHASH hHash = 0; //–î–µ—Å–∫—Ä–∏–ø—Ç–æ—Ä —Ö—ç—à-–æ–±—ä–µ–∫—Ç–∞
+    DWORD dwCount = 16;   //–†–∞–∑–º–µ—Ä –±–ª–æ–∫–∞
+    BYTE dwData[32];      //–ë–ª–æ–∫ –¥–∞–Ω–Ω—ã—Ö (–±–ª–æ–∫ + 16 –±–∞–π—Ç –Ω–µ–∏–∑–≤–µ—Å—Ç–Ω–æ–π –∏–Ω—Ñ–æ—Ä–º–∞—Ü–∏–∏ –æ—Ç CryptEncrypt())
 
-    //è†‡Æ´Ï
+    //–ü–∞—Ä–æ–ª—å
     LPWSTR wszPassword = wPass;
-    //Ñ´®≠† Ø†‡Æ´Ô ¢ °†©‚†Â
+    //–î–ª–∏–Ω–∞ –ø–∞—Ä–æ–ª—è –≤ –±–∞–π—Ç–∞—Ö
     DWORD cbPassword = (wcslen(wszPassword) + 1)*sizeof(WCHAR);
 
-    bool work = true;   //ì·´Æ¢®• ·Æ¢•‡Ë•≠®Ô ®‚•‡†Ê®© while
-    size_t sh = 0;      //ë™Æ´Ï™Æ ·®¨¢Æ´Æ¢ ·Á®‚†≠Æ ®ß ‰†©´†
+    bool work = true;   //–£—Å–ª–æ–≤–∏–µ —Å–æ–≤–µ—Ä—à–µ–Ω–∏—è –∏—Ç–µ—Ä–∞—Ü–∏–π while
+    size_t sh = 0;      //–°–∫–æ–ª—å–∫–æ —Å–∏–º–≤–æ–ª–æ–≤ —Å—á–∏—Ç–∞–Ω–æ –∏–∑ —Ñ–∞–π–ª–∞
 
-    //----------------------îÆ‡¨®‡„•¨ ®¨•≠† ‰†©´Æ¢-----------------------------
+    //----------------------–§–æ—Ä–º–∏—Ä—É–µ–º –∏–º–µ–Ω–∞ —Ñ–∞–π–ª–æ–≤-----------------------------
 
     WCHAR *wszNameFile = nameFile;
     WCHAR wszNameFileEncrypt[128];
@@ -114,18 +114,18 @@ void EncryptMyFile(WCHAR *nameFile, char* password)
 
     //-----------------------------------------------------------------------
 
-    //é‚™‡Î‚®• ‰†©´Æ¢
-    FILE *f = fopen(filename, "ab+" );          //®·ÂÆ§≠Î©
-    FILE *sf = fopen(cryptname, "ab+" );       //ß†Ë®‰‡Æ¢†≠≠Î©
-    FILE *svf = fopen(decryptname, "ab+" );    //‡†·Ë®‰‡Æ¢†≠≠Î©
+    //–û—Ç–∫—Ä—ã—Ç–∏–µ —Ñ–∞–π–ª–æ–≤
+    FILE *f = fopen(filename, "ab+" );          //–∏—Å—Ö–æ–¥–Ω—ã–π
+    FILE *sf = fopen(cryptname, "ab+" );       //–∑–∞—à–∏—Ñ—Ä–æ–≤–∞–Ω–Ω—ã–π
+    FILE *svf = fopen(decryptname, "ab+" );    //—Ä–∞—Å—à–∏—Ñ—Ä–æ–≤–∞–Ω–Ω—ã–π
 
     if((f == 0) || (sf == 0) || (svf == 0))
     {
-        printf("éË®°™† Æ‚™‡Î‚®Ô ‰†©´†!");
+        printf("–û—à–∏–±–∫–∞ –æ—Ç–∫—Ä—ã—Ç–∏—è —Ñ–∞–π–ª–∞!");
         return;
     }
 
-    //èÆ´„Á†•¨ ™Æ≠‚•™·‚ ™‡®Ø‚ÆØ‡Æ¢†©§•‡†
+    //–ü–æ–ª—É—á–∞–µ–º –∫–æ–Ω—Ç–µ–∫—Å—Ç –∫—Ä–∏–ø—Ç–æ–ø—Ä–æ–≤–∞–π–¥–µ—Ä–∞
     if(!CryptAcquireContext(
                 &hProv,
                 NULL,
@@ -137,21 +137,21 @@ void EncryptMyFile(WCHAR *nameFile, char* password)
         goto Cleanup;
     }
 
-    //à≠®Ê®®‡Æ¢†≠®• Â•Ë®‡Æ¢†≠®Ô ØÆ‚Æ™† §†≠≠ÎÂ
+    //–ò–Ω–∏—Ü–∏–∏—Ä–æ–≤–∞–Ω–∏–µ —Ö–µ—à–∏—Ä–æ–≤–∞–Ω–∏—è –ø–æ—Ç–æ–∫–∞ –¥–∞–Ω–Ω—ã—Ö
     if(!CryptCreateHash(hProv, CALG_SHA_256, 0, 0, &hHash))
     {
         printf("Error %x during CryptCreateHash!\n", GetLastError());
         goto Cleanup;
     }
 
-    //ï•Ë®‡Æ¢†≠®• Ø†‡Æ´Ô
+    //–•–µ—à–∏—Ä–æ–≤–∞–Ω–∏–µ –ø–∞—Ä–æ–ª—è
     if(!CryptHashData(hHash, (PBYTE)wszPassword, cbPassword, 0))
     {
         printf("Error %x during CryptHashData!\n", GetLastError());
         goto Cleanup;
     }
 
-    //ëÆß§†≠®• ™´ÓÁ† ·•†≠·†, ØÆ´„Á•≠≠Æ£Æ ®ß Â•Ë† Ø†‡Æ´Ô
+    //–°–æ–∑–¥–∞–Ω–∏–µ –∫–ª—é—á–∞ —Å–µ–∞–Ω—Å–∞, –ø–æ–ª—É—á–µ–Ω–Ω–æ–≥–æ –∏–∑ —Ö–µ—à–∞ –ø–∞—Ä–æ–ª—è
     if(!CryptDeriveKey(hProv, CALG_AES_128, hHash, CRYPT_EXPORTABLE, &hKey))
     {
         printf("Error %x during CryptDeriveKey!\n", GetLastError());
@@ -160,7 +160,7 @@ void EncryptMyFile(WCHAR *nameFile, char* password)
 
     while(work)
     {
-        //------Á®‚†•¨ ‰†©´------------
+        //------—á–∏—Ç–∞–µ–º —Ñ–∞–π–ª------------
         sh = fread(dwData, sizeof(BYTE), 16, f);
         if(sh != 16)
         {
@@ -184,7 +184,7 @@ void EncryptMyFile(WCHAR *nameFile, char* password)
         }
         printf("\n");
 */
-        //ò®‰‡Æ¢†≠®•
+        //–®–∏—Ñ—Ä–æ–≤–∞–Ω–∏–µ
         if (!CryptEncrypt(
                     hKey,
                     0,
@@ -205,13 +205,13 @@ void EncryptMyFile(WCHAR *nameFile, char* password)
         }
         printf("\n");
 */
-        //-----è®Ë•¨ ¢ ‰†©´------------
+        //-----–ü–∏—à–µ–º –≤ —Ñ–∞–π–ª------------
         fwrite(&dwData, sizeof(BYTE), 16, sf);
         if(ferror(sf))
-            printf("éË®°™† ØÆ‚Æ™† ¢¢Æ§†/¢Î¢Æ§†!\n");
+            printf("–û—à–∏–±–∫–∞ –ø–æ—Ç–æ–∫–∞ –≤–≤–æ–¥–∞/–≤—ã–≤–æ–¥–∞!\n");
         //-----------------------------
 
-        //ê†·Ë®‰‡Æ¢™† §†≠≠ÎÂ
+        //–†–∞—Å—à–∏—Ñ—Ä–æ–≤–∫–∞ –¥–∞–Ω–Ω—ã—Ö
         if (!CryptDecrypt(
                     hKey,
                     0,
@@ -231,10 +231,10 @@ void EncryptMyFile(WCHAR *nameFile, char* password)
         }
         printf("\n");
 */
-        //-----è®Ë•¨ ¢ ‰†©´------------
+        //-----–ü–∏—à–µ–º –≤ —Ñ–∞–π–ª------------
         fwrite(&dwData, sizeof(BYTE), sh, svf);
         if(ferror(svf))
-            printf("éË®°™† ØÆ‚Æ™† ¢¢Æ§†/¢Î¢Æ§†!\n");
+            printf("–û—à–∏–±–∫–∞ –ø–æ—Ç–æ–∫–∞ –≤–≤–æ–¥–∞/–≤—ã–≤–æ–¥–∞!\n");
         //-----------------------------
     }
 
