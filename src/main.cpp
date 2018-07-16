@@ -17,34 +17,23 @@ void PrintDwData(BYTE *_dwData, size_t size);
 int main(int argv, char *argc[])
 {
     //Режим работы программы
-    TCHAR tMode = L'e';
+    TCHAR tMode;// = L'e';
 
     //Соль для генерации пароля
-    TCHAR *password = L"pass";
-/*
-    wprintf(L"Encrypt (e) or decrypt (d) these files?");
+    TCHAR password[MAX_PATH];// = L"pass";
+
+SelectModeLoop:
+
+    wprintf(L"Encrypt (e) or decrypt (d) these files?\n");
     wscanf(L"%lc", &tMode);
 
-    wprintf(L"Enter the password to encrypt(decrypt) the data: ");
+    wprintf(L"Enter the password to encrypt(decrypt) the data:\n");
     wscanf(L"%ls", password);
-*/
-    if(tMode == L'e')
-    {
-        wprintf(L"File encryption...");
-        printf("\nEncryption was successful!");
 
-        //return 0;
-    }
-    if(tMode == L'd')
-    {
-        wprintf(L"File decryption...");
-        printf("\nDecryption was successful!");
-        //return 0;
-    }
     if((tMode != L'e') && (tMode != L'd'))
     {
-        wprintf(L"Mode selection error!");
-        return 0;
+        wprintf(L"Mode selection error, please select mode again!\n");
+        goto SelectModeLoop;
     }
 
     //--------------- Поиск файла по маске ------------------
@@ -62,8 +51,6 @@ int main(int argv, char *argc[])
         printf("FindFirstFile failed %d\n", GetLastError());
         return 0;
     }
-
-    printf("Files for encryption:\n\n");
     do
     {
        if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
@@ -73,12 +60,24 @@ int main(int argv, char *argc[])
        }
        else
        {
-          //filesize.LowPart = FindFileData.nFileSizeLow;
-          //filesize.HighPart = FindFileData.nFileSizeHigh;
-          wprintf(L"%ls\n", FindFileData.cFileName/*, filesize.QuadPart*/);
+           if(tMode == L'e')
+           {
+               wprintf(L"Encryption file: %ls...\n", FindFileData.cFileName);
+               EncryptMyFile(FindFileData.cFileName, password);
+               wprintf(L"Encryption was successful!\n\n");
 
-          //Шифрование найденного файла
-          DecryptMyFile(FindFileData.cFileName, password);
+               //return 0;
+           }
+           if(tMode == L'd')
+           {
+               wprintf(L"Decryption file: %ls...\n", FindFileData.cFileName);
+               DecryptMyFile(FindFileData.cFileName, password);
+               wprintf(L"\nDecryption was successful!\n\n");
+               //return 0;
+           }
+
+          //filesize.LowPart = FindFileData.nFileSizeLow;
+          //filesize.HighPart = FindFileData.nFileSizeHigh;    
        }
     }
     while (FindNextFile(hFind, &FindFileData) != 0);
@@ -97,6 +96,10 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
     HCRYPTHASH hHash = 0; //Дескриптор хэш-объекта
     DWORD dwCount = 16;   //Размер блока
     BYTE dwData[32];      //Блок данных (блок + 16 байт неизвестной информации от CryptEncrypt())
+  /*BYTE dwDataT[32] = {0xe9, 0xe6, 0x17, 0x06, 0x4f, 0x0b, 0xb2, 0x94,
+                       0xe7, 0xd2, 0x8f, 0xfa, 0xe9, 0x24, 0x0b, 0x23,
+                       0xad, 0x67, 0xc6, 0xcc, 0xb1, 0x48, 0xc4, 0xa3,
+                       0x95, 0x65, 0xd3, 0x79, 0x3d, 0xef, 0xfe, 0x8f}; // -->> .qmake.stash.pussy */
 
     //Пароль
     LPTSTR wszPassword = _password;
@@ -186,8 +189,10 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
         printf("Data:\n");
         PrintDwData(dwData, sh);
 */
-        //Шифрование блока
+
         dwCount = 16;   //Обнуление счетчика зашифрованных байтов
+
+        //Шифрование блока
         if (!CryptEncrypt(
                     hKey,
                     0,
@@ -200,26 +205,16 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
             printf("Error %d during CryptEncrypt!\n", GetLastError());
             goto Cleanup;
         }
-
-        if (!CryptDecrypt(
-                    hKey,
-                    0,
-                    TRUE,
-                    0,
-                    dwData,
-                    &dwCount))
-        {
-            printf("Error %x during CryptEncrypt!\n", GetLastError());
-            goto Cleanup;
-        }
 /*
         printf("Encrypt data:\n");
         PrintDwData(dwData, sh);
+
+        printf("Success!");
 */
         //--------------Пишем в файл---------------
-        fwrite(&dwData, sizeof(BYTE), 16, sf);
+        fwrite(&dwData, sizeof(BYTE), 32, sf);
         if(ferror(sf))
-            printf("Ошибка потока ввода/вывода!\n");
+            printf("Error write file!\n");
         //----------------------------------------
     }
 
@@ -281,7 +276,7 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
 
     //-----------------------------------------------------------------------
 
-    if(wszNameFile == L"AES_W.exe")
+    if(wszNameFile == L"pussyCrypt.exe")
     {
         return;
     }
@@ -331,14 +326,14 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
     while(work)
     {
         //---------------читаем файл-----------------
-        sh = fread(dwData, sizeof(BYTE), 16, f);
-        if(sh != 16)
+        sh = fread(dwData, sizeof(BYTE), 32, f);
+        if(sh != 32)
         {
             if(feof(f))
             {
-                for(DWORD i = sh; i < 16; i++)
+                for(DWORD i = sh; i < 32; i++)
                 {
-                    dwData[i] = 16 - sh;
+                    dwData[i] = 32 - sh;
                 }
                 work = false;
             }
@@ -350,20 +345,7 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
         printf("Data:\n");
         PrintDwData(dwData, sh);
 */
-        //Шифрование блока !!!!!!!!!!!!!!!!! работает только с функцией Encrypt
-        dwCount = 16;   //Обнуление счетчика зашифрованных байтов
-        if (!CryptEncrypt(
-                    hKey,
-                    0,
-                    TRUE,
-                    0,
-                    dwData,
-                    &dwCount,
-                    sizeof(dwData)))
-        {
-            printf("Error %d during CryptEncrypt!\n", GetLastError());
-            goto Cleanup;
-        }
+        dwCount = 32;   //Обнуление счетчика зашифрованных байтов
 
         //Расшифровка данных
         if (!CryptDecrypt(
@@ -374,7 +356,7 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
                     dwData,
                     &dwCount))
         {
-            printf("Error %x during CryptEncrypt!\n", GetLastError());
+            printf("Error %x during CryptDecrypt!\n", GetLastError());
             goto Cleanup;
         }
 /*
@@ -382,9 +364,9 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
         PrintDwData(dwData, sh);
 */
         //--------------Пишем в файл---------------
-        fwrite(&dwData, sizeof(BYTE), sh, svf);
+        fwrite(&dwData, sizeof(BYTE), 16, svf);
         if(ferror(svf))
-            printf("Ошибка потока ввода/вывода!\n");
+            printf("Error write file!\n");
         //------------------------------------------
     }
 
