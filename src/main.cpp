@@ -14,7 +14,7 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password);
 void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password);
 void PrintDwData(BYTE *_dwData, size_t size);
 
-int main(int argv, char *argc[])
+int main(/*int argv, char *argc[]*/)
 {
     //Режим работы программы
     TCHAR tMode;// = L'e';
@@ -48,7 +48,7 @@ SelectModeLoop:
     hFind = FindFirstFile(lpzMaskFile, &FindFileData);
     if (hFind == INVALID_HANDLE_VALUE)
     {
-        printf("FindFirstFile failed %d\n", GetLastError());
+        wprintf(L"FindFirstFile failed %d\n", GetLastError());
         return 0;
     }
     do
@@ -83,8 +83,6 @@ SelectModeLoop:
     while (FindNextFile(hFind, &FindFileData) != 0);
 
     FindClose(hFind);
-
-    wscanf(L"%lc", &tMode);
 
     return 0;
 }
@@ -130,7 +128,7 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
     FILE *sf = _wfopen(wszNameFileEncrypt, L"ab+" );     //зашифрованный
     if((f == 0) || (sf == 0))
     {
-        printf("Ошибка открытия файла!");
+        wprintf(L"Ошибка открытия файла!");
         return;
     }
 
@@ -142,28 +140,28 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
                 PROV_RSA_AES,
                 CRYPT_VERIFYCONTEXT))
     {
-        printf("Error %x during CryptAcquireContext!\n", GetLastError());
+        wprintf(L"Error %x during CryptAcquireContext!\n", GetLastError());
         goto Cleanup;
     }
 
     //Инициирование хеширования потока данных
     if(!CryptCreateHash(hProv, CALG_SHA_256, 0, 0, &hHash))
     {
-        printf("Error %x during CryptCreateHash!\n", GetLastError());
+        wprintf(L"Error %x during CryptCreateHash!\n", GetLastError());
         goto Cleanup;
     }
 
     //Хеширование пароля
     if(!CryptHashData(hHash, (PBYTE)wszPassword, cbPassword, 0))
     {
-        printf("Error %x during CryptHashData!\n", GetLastError());
+        wprintf(L"Error %x during CryptHashData!\n", GetLastError());
         goto Cleanup;
     }
 
     //Создание ключа сеанса, полученного из хеша пароля
     if(!CryptDeriveKey(hProv, CALG_AES_128, hHash, CRYPT_EXPORTABLE, &hKey))
     {
-        printf("Error %x during CryptDeriveKey!\n", GetLastError());
+        wprintf(L"Error %x during CryptDeriveKey!\n", GetLastError());
         goto Cleanup;
     }
 
@@ -182,7 +180,7 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
                 work = false;
             }
             if(ferror(f))
-                printf("File read error.");
+                wprintf(L"File read error.");
         }
         //-------------------------------------------
 /*
@@ -202,7 +200,7 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
                     &dwCount,
                     sizeof(dwData)))
         {
-            printf("Error %d during CryptEncrypt!\n", GetLastError());
+            wprintf(L"Error %d during CryptEncrypt!\n", GetLastError());
             goto Cleanup;
         }
 /*
@@ -214,7 +212,7 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
         //--------------Пишем в файл---------------
         fwrite(&dwData, sizeof(BYTE), 32, sf);
         if(ferror(sf))
-            printf("Error write file!\n");
+            wprintf(L"Error write file!\n");
         //----------------------------------------
     }
 
@@ -234,15 +232,6 @@ Cleanup:
 
     fclose(f);
     fclose(sf);
-}
-
-void PrintDwData(BYTE *_dwData, size_t size)
-{
-    for(size_t i = 0; i < size; i++)
-    {
-        printf("%02x ",  _dwData[i]);
-    }
-    printf("\n");
 }
 
 void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
@@ -286,7 +275,7 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
     FILE *svf = _wfopen(wszNameFileDecrypt, L"ab+" );    //расшифрованный
     if((f == 0) || (svf == 0))
     {
-        printf("Error file!");
+        wprintf(L"Error file!");
         return;
     }
 
@@ -298,28 +287,28 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
                 PROV_RSA_AES,
                 CRYPT_VERIFYCONTEXT))
     {
-        printf("Error %x during CryptAcquireContext!\n", GetLastError());
+        wprintf(L"Error %x during CryptAcquireContext!\n", GetLastError());
         goto Cleanup;
     }
 
     //Инициирование хеширования потока данных
     if(!CryptCreateHash(hProv, CALG_SHA_256, 0, 0, &hHash))
     {
-        printf("Error %x during CryptCreateHash!\n", GetLastError());
+        wprintf(L"Error %x during CryptCreateHash!\n", GetLastError());
         goto Cleanup;
     }
 
     //Хеширование пароля
     if(!CryptHashData(hHash, (PBYTE)wszPassword, cbPassword, 0))
     {
-        printf("Error %x during CryptHashData!\n", GetLastError());
+        wprintf(L"Error %x during CryptHashData!\n", GetLastError());
         goto Cleanup;
     }
 
     //Создание ключа сеанса, полученного из хеша пароля
     if(!CryptDeriveKey(hProv, CALG_AES_128, hHash, CRYPT_EXPORTABLE, &hKey))
     {
-        printf("Error %x during CryptDeriveKey!\n", GetLastError());
+        wprintf(L"Error %x during CryptDeriveKey!\n", GetLastError());
         goto Cleanup;
     }
 
@@ -338,7 +327,7 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
                 work = false;
             }
             if(ferror(f))
-                printf("File read error.");
+                wprintf(L"File read error.");
         }
         //-------------------------------------------
 /*
@@ -356,7 +345,7 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
                     dwData,
                     &dwCount))
         {
-            printf("Error %x during CryptDecrypt!\n", GetLastError());
+            wprintf(L"Error %x during CryptDecrypt!\n", GetLastError());
             goto Cleanup;
         }
 /*
@@ -366,7 +355,7 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
         //--------------Пишем в файл---------------
         fwrite(&dwData, sizeof(BYTE), 16, svf);
         if(ferror(svf))
-            printf("Error write file!\n");
+            wprintf(L"Error write file!\n");
         //------------------------------------------
     }
 
@@ -387,4 +376,13 @@ Cleanup:
     fclose(f);
     fclose(svf);
 
+}
+
+void PrintDwData(BYTE *_dwData, size_t size)
+{
+    for(size_t i = 0; i < size; i++)
+    {
+        wprintf(L"%02x ",  _dwData[i]);
+    }
+    wprintf(L"\n");
 }
