@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <tchar.h>
 
-#define SIZE_DATA 16 //Размер входного массива байтов
+#define SIZE_DATA 32768 //Размер входного массива байтов
 
 void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password);
 void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password);
@@ -19,74 +19,74 @@ void PrintDwData(BYTE *_dwData, size_t size);
 int main(/*int argv, char *argc[]*/)
 {
     //Режим работы программы
-        TCHAR tMode;// = L'e';
+    TCHAR tMode;// = L'e';
 
-        //Соль для генерации пароля
-        TCHAR password[MAX_PATH];// = L"pass";
+    //Соль для генерации пароля
+    TCHAR password[MAX_PATH];// = L"pass";
 
-    SelectModeLoop:
+SelectModeLoop:
 
-        wprintf(L"Encrypt (e) or decrypt (d) these files?\n");
-        wscanf(L"%lc", &tMode);
+    wprintf(L"Encrypt (e) or decrypt (d) these files?\n");
+    wscanf(L"%lc", &tMode);
 
-        wprintf(L"Enter the password to encrypt(decrypt) the data:\n");
-        wscanf(L"%ls", password);
+    wprintf(L"Enter the password to encrypt(decrypt) the data:\n");
+    wscanf(L"%ls", password);
 
-        if((tMode != L'e') && (tMode != L'd'))
-        {
-            wprintf(L"Mode selection error, please select mode again!\n");
-            goto SelectModeLoop;
-        }
+    if((tMode != L'e') && (tMode != L'd'))
+    {
+        wprintf(L"Mode selection error, please select mode again!\n");
+        goto SelectModeLoop;
+    }
 
-        //--------------- Поиск файла по маске ------------------
+    //--------------- Поиск файла по маске ------------------
 
-        WIN32_FIND_DATA FindFileData;
-        //LARGE_INTEGER filesize;
-        HANDLE hFind;
+    WIN32_FIND_DATA FindFileData;
+    //LARGE_INTEGER filesize;
+    HANDLE hFind;
 
-        //Маска
-        LPCTSTR lpzMaskFile = L"*";
+    //Маска
+    LPCTSTR lpzMaskFile = L"*";
 
-        hFind = FindFirstFile(lpzMaskFile, &FindFileData);
-        if (hFind == INVALID_HANDLE_VALUE)
-        {
-            wprintf(L"FindFirstFile failed %d\n", GetLastError());
-            return 0;
-        }
-        do
-        {
-           if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-           {
-              //_tprintf(TEXT("<DIR> %s\n"), FindFileData.cFileName);
-               continue;
-           }
-           else
-           {
-               if(tMode == L'e')
-               {
-                   wprintf(L"Encryption file: %ls...\n", FindFileData.cFileName);
-                   EncryptMyFile(FindFileData.cFileName, password);
-                   wprintf(L"Encryption was successful!\n\n");
-
-                   //return 0;
-               }
-               if(tMode == L'd')
-               {
-                   wprintf(L"Decryption file: %ls...\n", FindFileData.cFileName);
-                   DecryptMyFile(FindFileData.cFileName, password);
-                   wprintf(L"\nDecryption was successful!\n\n");
-                   //return 0;
-               }
-
-              //filesize.LowPart = FindFileData.nFileSizeLow;
-              //filesize.HighPart = FindFileData.nFileSizeHigh;
-           }
-        }
-        while (FindNextFile(hFind, &FindFileData) != 0);
-
-        FindClose(hFind);
-
+    hFind = FindFirstFile(lpzMaskFile, &FindFileData);
+    if (hFind == INVALID_HANDLE_VALUE)
+    {
+        wprintf(L"FindFirstFile failed %d\n", GetLastError());
         return 0;
+    }
+    do
+    {
+        if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        {
+            //_tprintf(TEXT("<DIR> %s\n"), FindFileData.cFileName);
+            continue;
+        }
+        else
+        {
+            if(tMode == L'e')
+            {
+                wprintf(L"Encryption file: %ls...\n", FindFileData.cFileName);
+                EncryptMyFile(FindFileData.cFileName, password);
+                wprintf(L"Encryption was successful!\n\n");
+
+                //return 0;
+            }
+            if(tMode == L'd')
+            {
+                wprintf(L"Decryption file: %ls...\n", FindFileData.cFileName);
+                DecryptMyFile(FindFileData.cFileName, password);
+                wprintf(L"\nDecryption was successful!\n\n");
+                //return 0;
+            }
+
+            //filesize.LowPart = FindFileData.nFileSizeLow;
+            //filesize.HighPart = FindFileData.nFileSizeHigh;
+        }
+    }
+    while (FindNextFile(hFind, &FindFileData) != 0);
+
+    FindClose(hFind);
+
+    return 0;
 }
 
 void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
@@ -114,14 +114,15 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
 
     WCHAR *wszNameFile = _wszNameFile;
     WCHAR wszNameFileEncrypt[128];
-    WCHAR *wszExpansion = L".pussy";
+    LPCTSTR wszExpansion = L".pussy";
+    LPCTSTR wszProgName = L"pussyCrypt.exe";
 
     wcsncpy(wszNameFileEncrypt, wszNameFile, 128);
     wcscat(wszNameFileEncrypt, wszExpansion);
 
     //-----------------------------------------------------------------------
 
-    if(wszNameFile == L"pussyCrypt.exe")
+    if(!(wcscmp(wszNameFile, wszProgName)))
     {
         return;
     }
@@ -132,9 +133,8 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
     if((f == 0) || (sf == 0))
     {
         wprintf(L"Error open file!");
-        return;
+        goto Cleanup;
     }
-
     //Получаем контекст криптопровайдера
     if(!CryptAcquireContext(
                 &hProv,
@@ -183,10 +183,10 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
                 work = false;
             }
             if(ferror(f))
-                printf("File read error.");
+                wprintf(L"File read error.");
         }
         //-------------------------------------------
-/*
+        /*
         printf("Data:\n");
         PrintDwData(pbSrcData, sh);
 */
@@ -212,7 +212,7 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
             wprintf(L"Error %d during CryptEncrypt!\n", GetLastError());
             goto Cleanup;
         }
-/*
+        /*
         printf("Encrypt data:\n");
         PrintDwData(bCryptBuf, sh);
         printf("Success!");
@@ -266,18 +266,19 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
 
     WCHAR *wszNameFile = _wszNameFile;
     WCHAR wszNameFileDecrypt[128];
-    WCHAR *wszExpansionDecrypt = L".dec";
+    LPCTSTR wszExpansionDecrypt = L".dec";
+    LPCTSTR wszProgName = L"pussyCrypt.exe";
 
     //size_t pos = wcscspn(wszNameFile, wszExpansion);
     //printf("pos = %d\n", pos);
 
     wcsncpy(wszNameFileDecrypt, wszNameFile, 128);
     wcscat(wszNameFileDecrypt, wszExpansionDecrypt);
-//    wprintf(L"wszNameFileDecrypt = %ls\n", wszNameFileDecrypt);
+    //    wprintf(L"wszNameFileDecrypt = %ls\n", wszNameFileDecrypt);
 
     //-----------------------------------------------------------------------
 
-    if(wszNameFile == L"pussyCrypt.exe")
+    if(!(wcscmp(wszNameFile, wszProgName)))
     {
         return;
     }
@@ -288,7 +289,7 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
     if((f == 0) || (svf == 0))
     {
         wprintf(L"Error file!");
-        return;
+        goto Cleanup;
     }
 
     //Получаем контекст криптопровайдера
@@ -330,25 +331,24 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
         sh = fread(pbSrcData, sizeof(BYTE), sizeBuffRead, f);
         if(sh != sizeBuffRead)
         {
+            if( (sh == 0)&&(feof(f)) )
+                goto Cleanup;
             if(feof(f))
             {
-                for(unsigned i = sh; i < sizeBuffRead; i++)
-                {
-                    pbSrcData[i] = sizeBuffRead - sh;
-                }
-                work = false;
+                buflen = sh;
             }
+
             if(ferror(f))
-                printf("File read error.");
+                wprintf(L"File read error.");
         }
         //-------------------------------------------
-/*
+        /*
         printf("Data:\n");
         PrintDwData(pbSrcData, sh);
 */
         dwDataLen = buflen;   //Количество полезных байотв в блоке шифрования
 
-        //Копируем в буфер результата незашифрованные данные в размере этого буфера
+        //Копируем в буфер результата зашифрованные данные в размере этого буфера
         for(unsigned i = 0; i < dwDataLen; i++)
         {
             bCryptBuf[i] = pbSrcData[i];
@@ -366,12 +366,12 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
             wprintf(L"Error %x during CryptDecrypt!\n", GetLastError());
             goto Cleanup;
         }
-/*
+        /*
         printf("Decrypt data:\n");
         PrintDwData(bCryptBuf, sh);
 */
         //--------------Пишем в файл---------------
-        fwrite(bCryptBuf, sizeof(BYTE), sh - 1, svf);
+        fwrite(bCryptBuf, sizeof(BYTE), dwDataLen, svf);
         if(ferror(svf))
             wprintf(L"Error write file!\n");
         //------------------------------------------
