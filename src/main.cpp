@@ -11,6 +11,9 @@
 
 #define SIZE_DATA 32768 //Размер входного массива байтов
 
+bool errorFlag = false; //Флаг ошибки для прекращения работы программы
+//bool notDel = false;
+
 void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password);
 void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password);
 void PrintDwData(BYTE *_dwData, size_t size);
@@ -54,11 +57,13 @@ SelectModeLoop:
     hFind = FindFirstFile(lpzMaskFile, &FindFileData);
     if (hFind == INVALID_HANDLE_VALUE)
     {
-        wprintf(L"FindFirstFile failed %d\n", GetLastError());
+        //wprintf(L"FindFirstFile failed %d\n", GetLastError());
+        errorFlag++;
         return 0;
     }
     do
     {
+        //notDel = false;
         if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
         {
             //_tprintf(TEXT("<DIR> %s\n"), FindFileData.cFileName);
@@ -70,31 +75,46 @@ SelectModeLoop:
             {
                 wprintf(L"Encryption file: %ls...\n", FindFileData.cFileName);
                 EncryptMyFile(FindFileData.cFileName, password);
-                wprintf(L"Encryption was successful!\n\n");
+                if(!errorFlag) wprintf(L"Encryption was successful!\n\n");
 
                 //Удаляем файл
-                DeleteFileW(FindFileData.cFileName);
+                if(!errorFlag)
+                {
+                    DeleteFileW(FindFileData.cFileName);
+                }
             }
             if(tMode == L'd')
             {
                 wprintf(L"Decryption file: %ls...\n", FindFileData.cFileName);
                 DecryptMyFile(FindFileData.cFileName, password);
-                wprintf(L"\nDecryption was successful!\n\n");
+                if(!errorFlag) wprintf(L"\nDecryption was successful!\n\n");
 
                 //Удаляем файл
-                DeleteFileW(FindFileData.cFileName);
+                if(!errorFlag)
+                {
+                    DeleteFileW(FindFileData.cFileName);
+                }
             }
         }
     }
-    while (FindNextFile(hFind, &FindFileData) != 0);
+    while ((FindNextFile(hFind, &FindFileData) != 0) && (!errorFlag));
 
     FindClose(hFind);
+
+    if(errorFlag)
+    {
+        wprintf(L"\nOoops!\nInvalid password!\n\n");
+        system("pause");
+    }
 
     return 0;
 }
 
 void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
 {
+    FILE *f;
+    FILE *sf;
+
     HCRYPTPROV hProv = 0; //Дескриптор крипртопровайдера
     HCRYPTKEY hKey = 0;   //Дескриптор ключа
     HCRYPTHASH hHash = 0; //Дескриптор хэш-объекта
@@ -126,19 +146,31 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
 
     //-----------------------------------------------------------------------
 
-    if(!(wcscmp(wszNameFile, wszProgName)))
+    if(!(wcscmp(wszNameFile, wszProgName))) //Сравнение имени файла с именем программы
     {
         return;
     }
 
+//    size_t len1 = wcscspn(wszNameFile, wszExpansion);
+//    size_t len2 = wcslen(wszNameFile);
+/*
+    if((wcscspn(wszNameFile, wszExpansion) + 6) == wcslen(wszNameFile)) //Для исключения повторного шифрования
+    {
+        //errorFlag++;
+        notDel = true;
+        return;
+    }
+*/
     //Открытие файлов
-    FILE *f = _wfopen(wszNameFile, L"ab+" );              //исходный
-    FILE *sf = _wfopen(wszNameFileEncrypt, L"ab+" );     //зашифрованный
+    f = _wfopen(wszNameFile, L"ab+" );              //исходный
+    sf = _wfopen(wszNameFileEncrypt, L"ab+" );     //зашифрованный
     if((f == 0) || (sf == 0))
     {
         wprintf(L"Error open file!");
+        errorFlag++;
         goto Cleanup;
     }
+
     //Получаем контекст криптопровайдера
     if(!CryptAcquireContext(
                 &hProv,
@@ -148,6 +180,7 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
                 CRYPT_VERIFYCONTEXT))
     {
         wprintf(L"Error %x during CryptAcquireContext!\n", GetLastError());
+        errorFlag++;
         goto Cleanup;
     }
 
@@ -155,6 +188,7 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
     if(!CryptCreateHash(hProv, CALG_SHA_256, 0, 0, &hHash))
     {
         wprintf(L"Error %x during CryptCreateHash!\n", GetLastError());
+        errorFlag++;
         goto Cleanup;
     }
 
@@ -162,6 +196,7 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
     if(!CryptHashData(hHash, (PBYTE)wszPassword, cbPassword, 0))
     {
         wprintf(L"Error %x during CryptHashData!\n", GetLastError());
+        errorFlag++;
         goto Cleanup;
     }
 
@@ -169,6 +204,7 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
     if(!CryptDeriveKey(hProv, CALG_AES_128, hHash, CRYPT_EXPORTABLE, &hKey))
     {
         wprintf(L"Error %x during CryptDeriveKey!\n", GetLastError());
+        errorFlag++;
         goto Cleanup;
     }
 
@@ -188,7 +224,10 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
                 work = false;
             }
             if(ferror(f))
+            {
+                errorFlag++;
                 wprintf(L"File read error.");
+            }
         }
 
         //-------------------------------------------
@@ -214,7 +253,8 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
                     &dwDataLen, // return size for ciphered text
                     buflen))    //Размер блока
         {
-            wprintf(L"Error %d during CryptEncrypt!\n", GetLastError());
+            //wprintf(L"Error %d during CryptEncrypt!\n", GetLastError());
+            errorFlag++;
             goto Cleanup;
         }
         /*
@@ -225,7 +265,11 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
 
         fwrite(bCryptBuf, sizeof(BYTE), dwDataLen, sf);
         if(ferror(sf))
+        {
+            errorFlag++;
             wprintf(L"Error write file!\n");
+            goto Cleanup;
+        }
 
         //--------------------------------------------------------
     }
@@ -244,12 +288,21 @@ Cleanup:
         CryptReleaseContext(hProv, 0);
     }
 
+
     fclose(f);
     fclose(sf);
+    if(errorFlag)
+    {
+        if(_wremove(wszNameFileEncrypt) != 0)  // удаление файла
+            wprintf(L"Error delete file!\n");
+    }
 }
 
 void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
 {
+    FILE *f;
+    FILE *svf;
+
     HCRYPTPROV hProv = 0; //Дескриптор крипртопровайдера
     HCRYPTKEY hKey = 0;   //Дескриптор ключа
     HCRYPTHASH hHash = 0; //Дескриптор хэш-объекта
@@ -279,17 +332,18 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
 
     //-----------------------------------------------------------------------
 
-    if(!(wcscmp(wszNameFile, wszProgName)))
+    if(!(wcscmp(wszNameFile, wszProgName)))     //Сравнение имени файла с именем программы
     {
         return;
     }
 
     //Открытие файлов
-    FILE *f = _wfopen(wszNameFile, L"ab+" );          //исходный
-    FILE *svf = _wfopen(wszNameFileDecrypt, L"ab+" );    //расшифрованный
+    f = _wfopen(wszNameFile, L"ab+" );          //исходный
+    svf = _wfopen(wszNameFileDecrypt, L"ab+" );    //расшифрованный
     if((f == 0) || (svf == 0))
     {
         wprintf(L"Error file!");
+        errorFlag++;
         goto Cleanup;
     }
 
@@ -302,6 +356,7 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
                 CRYPT_VERIFYCONTEXT))
     {
         wprintf(L"Error %x during CryptAcquireContext!\n", GetLastError());
+        errorFlag++;
         goto Cleanup;
     }
 
@@ -309,6 +364,7 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
     if(!CryptCreateHash(hProv, CALG_SHA_256, 0, 0, &hHash))
     {
         wprintf(L"Error %x during CryptCreateHash!\n", GetLastError());
+        errorFlag++;
         goto Cleanup;
     }
 
@@ -316,6 +372,7 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
     if(!CryptHashData(hHash, (PBYTE)wszPassword, cbPassword, 0))
     {
         wprintf(L"Error %x during CryptHashData!\n", GetLastError());
+        errorFlag++;
         goto Cleanup;
     }
 
@@ -323,6 +380,7 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
     if(!CryptDeriveKey(hProv, CALG_AES_128, hHash, CRYPT_EXPORTABLE, &hKey))
     {
         wprintf(L"Error %x during CryptDeriveKey!\n", GetLastError());
+        errorFlag++;
         goto Cleanup;
     }
 
@@ -340,7 +398,11 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
             }
 
             if(ferror(f))
+            {
+                errorFlag++;
                 wprintf(L"File read error.");
+            }
+
         }
         //-------------------------------------------
         /*
@@ -364,7 +426,8 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
                     bCryptBuf,
                     &dwDataLen))
         {
-            wprintf(L"Error %x during CryptDecrypt!\n", GetLastError());
+            //wprintf(L"Error %x during CryptDecrypt!\n", GetLastError());
+            errorFlag++;
             goto Cleanup;
         }
         /*
@@ -374,7 +437,12 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
         //--------------Пишем в файл-------------------------
         fwrite(bCryptBuf, sizeof(BYTE), dwDataLen, svf);
         if(ferror(svf))
+        {
             wprintf(L"Error write file!\n");
+            errorFlag++;
+            goto Cleanup;
+        }
+
         //--------------------------------------------------
     }
 
@@ -394,6 +462,11 @@ Cleanup:
 
     fclose(f);
     fclose(svf);
+    if(errorFlag)
+    {
+        if(_wremove(wszNameFileDecrypt) != 0)  // удаление файла
+            wprintf(L"Error delete file!\n");
+    }
 
 }
 
