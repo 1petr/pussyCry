@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 #define SIZE_DATA 32768 //Размер входного массива байтов
+#define WEXE_NAME L"pussyCrypt.exe"
 
 bool errorFlag = false; //Флаг ошибки для прекращения работы программы
 //bool notDel = false;
@@ -17,6 +18,7 @@ bool errorFlag = false; //Флаг ошибки для прекращения р
 void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password);
 void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password);
 void PrintDwData(BYTE *_dwData, size_t size);
+LPTSTR RenameThisFile(LPTSTR _wszNameFile);
 
 int main()
 {
@@ -52,6 +54,7 @@ SelectModeLoop:
     //--------------- Поиск файла по маске ------------------
 
     WIN32_FIND_DATA FindFileData;
+    WCHAR *MyFindFileName;
     HANDLE hFind;
 
     hFind = FindFirstFile(lpzMaskFile, &FindFileData);
@@ -71,28 +74,42 @@ SelectModeLoop:
         }
         else
         {
+            MyFindFileName = FindFileData.cFileName;
+
+            if(!(wcscmp(MyFindFileName, WEXE_NAME))) //Сравнение имени файла с именем программы
+            {
+                continue;
+            }
+
             if(tMode == L'e')
             {
-                wprintf(L"Encryption file: %ls...\n", FindFileData.cFileName);
-                EncryptMyFile(FindFileData.cFileName, password);
-                if(!errorFlag) wprintf(L"Encryption was successful!\n\n");
+                //wprintf(L"Encryption file: %ls...\n", MyFindFileName);
+
+                if(!(MyFindFileName = RenameThisFile(MyFindFileName)))  //от перешифровки
+                    continue;
+
+                if(!errorFlag)
+                    EncryptMyFile(MyFindFileName, password);
+                //if(!errorFlag) wprintf(L"Encryption was successful!\n\n");
 
                 //Удаляем файл
                 if(!errorFlag)
                 {
-                    DeleteFileW(FindFileData.cFileName);
+                    DeleteFileW(MyFindFileName);
                 }
+
             }
             if(tMode == L'd')
             {
-                wprintf(L"Decryption file: %ls...\n", FindFileData.cFileName);
-                DecryptMyFile(FindFileData.cFileName, password);
-                if(!errorFlag) wprintf(L"\nDecryption was successful!\n\n");
+                ////wprintf(L"Decryption file: %ls...\n", MyFindFileName);
+                if(!errorFlag)
+                    DecryptMyFile(MyFindFileName, password);
+                //if(!errorFlag) wprintf(L"\nDecryption was successful!\n\n");
 
                 //Удаляем файл
                 if(!errorFlag)
                 {
-                    DeleteFileW(FindFileData.cFileName);
+                    DeleteFileW(MyFindFileName);
                 }
             }
         }
@@ -136,20 +153,25 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
 
     //----------------------Формируем имена файлов-----------------------------
 
-    WCHAR *wszNameFile = _wszNameFile;
+    //*************************************
+    //LPCTSTR? RenameThisFile(?);!!!*************** //Добавить надо функциональность
+    //*************************************
+  ////////&&&&&&&&&&&&&&&&&&&&???????????????????
+  ///
+  ///
+  ///
+  ///
+  ///
+  ///
+    WCHAR *wszNameFile = _wszNameFile;//RenameThisFile(_wszNameFile);
+    //RenameThisFile(_wszNameFile);
     WCHAR wszNameFileEncrypt[MAX_PATH];
     LPCTSTR wszExpansion = L".pussy";
-    LPCTSTR wszProgName = L"pussyCrypt.exe";
 
     wcsncpy(wszNameFileEncrypt, wszNameFile, MAX_PATH);
     wcscat(wszNameFileEncrypt, wszExpansion);
 
     //-----------------------------------------------------------------------
-
-    if(!(wcscmp(wszNameFile, wszProgName))) //Сравнение имени файла с именем программы
-    {
-        return;
-    }
 
 //    size_t len1 = wcscspn(wszNameFile, wszExpansion);
 //    size_t len2 = wcslen(wszNameFile);
@@ -161,6 +183,7 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
         return;
     }
 */
+
     //Открытие файлов
     f = _wfopen(wszNameFile, L"ab+" );              //исходный
     sf = _wfopen(wszNameFileEncrypt, L"ab+" );     //зашифрованный
@@ -296,6 +319,7 @@ Cleanup:
         if(_wremove(wszNameFileEncrypt) != 0)  // удаление файла
             wprintf(L"Error delete file!\n");
     }
+
 }
 
 void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
@@ -325,17 +349,11 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
 
     WCHAR *wszNameFile = _wszNameFile;
     WCHAR wszNameFileDecrypt[MAX_PATH];
-    LPCTSTR wszProgName = L"pussyCrypt.exe";
 
     wcsncpy(wszNameFileDecrypt, L"\0", MAX_PATH);                             //Обнуляем строку
     wcsncpy(wszNameFileDecrypt, wszNameFile, (wcslen(wszNameFile) - 6)); //Стираем расширение .pussy
 
     //-----------------------------------------------------------------------
-
-    if(!(wcscmp(wszNameFile, wszProgName)))     //Сравнение имени файла с именем программы
-    {
-        return;
-    }
 
     //Открытие файлов
     f = _wfopen(wszNameFile, L"ab+" );          //исходный
@@ -477,4 +495,144 @@ void PrintDwData(BYTE *_dwData, size_t size)
         wprintf(L"%02x ",  _dwData[i]);
     }
     wprintf(L"\n");
+}
+
+LPTSTR RenameThisFile(LPTSTR _wszNameFile)
+{
+    HCRYPTPROV hProv = 0; //Дескриптор крипртопровайдера
+    HCRYPTHASH hHash = 0; //Дескриптор хэш-объекта
+
+    //Пароль
+    LPCTSTR wszPassword = _wszNameFile;
+
+    //Длина пароля в байтах
+    DWORD cbPassword = (wcslen(wszPassword) + 1)*sizeof(WCHAR);
+
+    DWORD dwHashLen = 32;
+    BYTE bHash[dwHashLen]; //байтовый массив ВЫХОДНЫХ данных
+
+    //char PathToExe[MAX_PATH] = "";  //Полный путь с именем программы
+    char PathToFile[MAX_PATH] = ""; //Полный путь
+    char DestNameFile[MAX_PATH] = "";  //Полный путь с новым именем
+
+    char NameFileA[MAX_PATH] = ""; //Имя файла char*
+    wcstombs(NameFileA, _wszNameFile, MAX_PATH);    // wchar_t* -> char*
+    char NameFile[MAX_PATH] = ""; //Полный путь файла char*
+
+    char Expansion[MAX_PATH] = "";
+
+    char sHash[MAX_PATH] = "";  //хеш строкой
+    char spHash[dwHashLen][MAX_PATH];   //строка для каждого байта хеша
+
+    //Получаем контекст криптопровайдера
+    if(!CryptAcquireContext(
+                &hProv,
+                NULL,
+                MS_ENH_RSA_AES_PROV,
+                PROV_RSA_AES,
+                CRYPT_VERIFYCONTEXT))
+    {
+        wprintf(L"Error %x during CryptAcquireContext!\n", GetLastError());
+    }
+
+    //Инициирование хеширования потока данных
+    if(!CryptCreateHash(hProv, CALG_SHA_256, 0, 0, &hHash))
+    {
+        wprintf(L"Error %x during CryptCreateHash!\n", GetLastError());
+    }
+
+    //Хеширование пароля
+    if(!CryptHashData(hHash, (PBYTE)wszPassword, cbPassword, 0))
+    {
+        wprintf(L"Error %x during CryptHashData!\n", GetLastError());
+    }
+
+    //получаю значение хэша
+    if(!CryptGetHashParam(hHash, HP_HASHVAL, bHash, &dwHashLen, 0)){
+
+        wprintf(L"Error %x during CryptGetHashParam!\n", GetLastError());
+    }
+
+    //Переписать хеш в строку
+    for(DWORD i = 0; i < dwHashLen; i++)
+    {
+        //DestNameFile[i] = bHash[i - strlen(PathToFile)];
+        sprintf(spHash[i], "%02x", bHash[i]);
+        strcat(sHash, spHash[i]);
+    }
+
+    //Определяем полный путь к исполняемому файлу
+    //GetModuleFileNameA(GetModuleHandle(0), PathToExe, MAX_PATH);
+
+    //DWORD dPatnLen = MAX_PATH;
+    //char lpBuffer[dPatnLen];
+    //Удаляем название программы
+ /*   for(DWORD i = 0; i < (strlen(PathToExe) - wcslen(WEXE_NAME)); i++)
+    {
+        PathToFile[i] = PathToExe[i];
+    }*/
+
+    //Получаем путь текущей директории
+    GetCurrentDirectoryA(MAX_PATH, PathToFile);
+    strcat(PathToFile, "\\");
+
+    size_t count = 0;
+    for(size_t i = 0; i < strlen(NameFileA); i++)
+    {
+        if(NameFileA[i] == '.')
+            count = i;
+    }
+    for(size_t i = 0, j = 0; i < strlen(NameFileA); i++)
+    {
+        if(i >= count)
+        {
+            Expansion[j] = NameFileA[i];
+            j++;
+        }
+    }
+
+    if(!strcmp(Expansion, ".pussy")) //от перешифровки
+    {
+        //errorFlag++;
+        wprintf(L"Error rechiper files!\n");
+        return 0;
+    }
+
+    //Формируем путь до файла
+    strcat(NameFile, PathToFile);
+    strcat(NameFile, NameFileA);
+
+    //Формируем новый путь до файла
+    strncpy(DestNameFile, PathToFile, MAX_PATH);  // ncpy для перезаписи static
+    strcat(DestNameFile, sHash);
+    strcat(DestNameFile, Expansion);
+
+    //printf("NameFile: %s\n", NameFile);
+
+
+    //Переимеонвание файла
+    if(!MoveFileA(NameFile, DestNameFile))
+    {
+        wprintf(L"Error %x during MoveFileA!\n", GetLastError());
+    }
+
+    //осовждаю дескриптор хэш объекта
+    if(!CryptDestroyHash(hHash))
+    {
+        wprintf(L"Error %x during CryptDestroyHash!\n", GetLastError());
+    }
+    //освобождаю дескриптор криптопровайдера
+    if(!CryptReleaseContext(hProv, 0))
+    {
+        wprintf(L"Error %x during CryptReleaseContext!\n", GetLastError());
+    }
+
+    //const size_t size = strlen(DestNameFile) + 1;
+    static WCHAR wDestName[MAX_PATH];
+    wcsncpy(wDestName, L"", MAX_PATH);
+    mbstowcs(wDestName, strcat(sHash, Expansion), MAX_PATH);
+
+    wprintf(L"%s\n", wDestName);
+
+    return wDestName;
 }
