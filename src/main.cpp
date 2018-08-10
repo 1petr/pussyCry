@@ -7,8 +7,8 @@
 */
 
 #include <windows.h>
-#include <stdio.h>
 #include <assert.h>
+#include <stdio.h>
 #include <iostream>
 
 #define SIZE_DATA 32768 //Размер входного массива байтов
@@ -19,27 +19,42 @@ bool errorFlag = false; //Флаг ошибки для прекращения р
 void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password);
 void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password);
 void PrintDwData(BYTE *_dwData, size_t size);
-LPTSTR RenameThisFile(LPTSTR _wszNameFile);
+LPTSTR RenameThisFile(LPTSTR _wszNameFile, bool isFolder = false);
 
 int main()
 {
     setlocale(LC_ALL, "");
 
+    //Для хранения текущей директории
+    TCHAR sMyCurrentDirectory[MAX_PATH] = L"";
+
     //Режим работы программы
-    TCHAR tMode;
+    TCHAR tMode = L'e';
 
     //Соль для генерации пароля
-    TCHAR password[MAX_PATH];
+    TCHAR password[MAX_PATH] = L"";
 
     //Маска для поиска файлов
-    LPCTSTR lpzMaskFile;
+    LPCTSTR lpzMaskFile = L"";
+
+    WIN32_FIND_DATA FindFileData;
+    WCHAR *MyFindFileName;
+    HANDLE hFind;
+    size_t uAllFilesCount = 0;  //Общее количество файлов
+    size_t uFilesCount = 0;     //Номер файла
+
+    wprintf(L"Enter the path of the directory: ");
+    wscanf(L"%ls", sMyCurrentDirectory);
+    fflush(stdin); //Очистка входного буфера
+
+    SetCurrentDirectoryW(sMyCurrentDirectory);
 
 SelectModeLoop:
 
-    wprintf(L"Encrypt (e) or decrypt (d) these files?\n");
+    wprintf(L"Encrypt (e) or decrypt (d) these files? : ");
     wscanf(L"%lc", &tMode);
 
-    wprintf(L"Enter the password to encrypt(decrypt) the data:\n");
+    wprintf(L"Enter the password to encrypt(decrypt) the data: ");
     wscanf(L"%ls", password);
 
     if((tMode != L'e') && (tMode != L'd'))
@@ -49,29 +64,23 @@ SelectModeLoop:
         goto SelectModeLoop;
     }
 
+    //-------------Подсчет файлов по маске-------------------
+
     if(tMode == L'e')
         lpzMaskFile = L"*";
     if(tMode == L'd')
         lpzMaskFile = L"*.pussy";
 
-    WIN32_FIND_DATA FindFileData;
-    WCHAR *MyFindFileName;
-    HANDLE hFind;
-    size_t uAllFilesCount = 0;
-    size_t uFilesCount = 0;
-
-    //-------------Подсчет файлов по маске-------------------
-
     hFind = FindFirstFile(lpzMaskFile, &FindFileData);
     assert(hFind);
     do
     {
-        if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-            continue;
-        else
-        {
-            uAllFilesCount++;
-        }
+         MyFindFileName = FindFileData.cFileName;
+         if((wcscmp(MyFindFileName, L".")) && (wcscmp(MyFindFileName, L"..")))
+         {
+              //wprintf(L"%s\n", MyFindFileName);
+              uAllFilesCount++;
+         }
     }
     while(FindNextFile(hFind, &FindFileData) != 0);
 
@@ -88,24 +97,28 @@ SelectModeLoop:
     }
     do
     {
+        MyFindFileName = FindFileData.cFileName;
+
+        if(!(wcscmp(MyFindFileName, WEXE_NAME))) //Сравнение имени файла с именем программы
+        {
+            continue;
+        }
+
         if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
         {
-            //_tprintf(TEXT("<DIR> %s\n"), FindFileData.cFileName);
-            continue;
+            if((wcscmp(MyFindFileName, L".")) && (wcscmp(MyFindFileName, L"..")) && tMode == L'e')
+            {
+                uFilesCount++;
+                wprintf(L"Encrypting the directory name( %d/%d ): %ls\n", uFilesCount, uAllFilesCount, MyFindFileName);
+                RenameThisFile(MyFindFileName, true);
+            }
         }
         else
         {
-            MyFindFileName = FindFileData.cFileName;
             uFilesCount++;
-
-            if(!(wcscmp(MyFindFileName, WEXE_NAME))) //Сравнение имени файла с именем программы
-            {
-                continue;
-            }
-
             if(tMode == L'e')
             {
-                wprintf(L"Encryption file( %d/%d ): %ls...\n", uFilesCount, uAllFilesCount, MyFindFileName);
+                wprintf(L"Encryption file( %d/%d ): %ls\n", uFilesCount, uAllFilesCount, MyFindFileName);
 
                 if(!(MyFindFileName = RenameThisFile(MyFindFileName)))  //от перешифровки
                 {
@@ -117,16 +130,16 @@ SelectModeLoop:
                     EncryptMyFile(MyFindFileName, password);
                 if(!errorFlag)
                 {
-                    wprintf(L"Encryption was successful!\n\n");
+                    wprintf(L"Done.\n\n");
                 }
             }
             if(tMode == L'd')
             {
-                wprintf(L"Decryption file( %d/%d ): %ls...\n", uFilesCount, uAllFilesCount, MyFindFileName);
+                wprintf(L"Decryption file( %d/%d ): %ls\n", uFilesCount, uAllFilesCount, MyFindFileName);
                 if(!errorFlag)
                     DecryptMyFile(MyFindFileName, password);
                 if(!errorFlag)
-                    wprintf(L"Decryption was successful!\n\n");
+                    wprintf(L"Done.\n\n");
             }
             //Удаляем незашифрованный файл
             if(!errorFlag)
@@ -141,7 +154,7 @@ SelectModeLoop:
 
     if(errorFlag)
     {
-        wprintf(L"\nOoops!\nInvalid password!\n\n");
+        wprintf(L"\nOoops! Invalid password!\n\n");
         system("pause");
     }
 
@@ -310,7 +323,6 @@ Cleanup:
         CryptReleaseContext(hProv, 0);
     }
 
-
     fclose(f);
     fclose(sf);
     if(errorFlag)
@@ -318,7 +330,6 @@ Cleanup:
         if(_wremove(wszNameFileEncrypt) != 0)  // удаление файла в случае ошибки
             wprintf(L"Error delete file!\n");
     }
-
 }
 
 void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
@@ -419,7 +430,6 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
                 errorFlag++;
                 //wprintf(L"File read error.");
             }
-
         }
         //-------------------------------------------
         /*
@@ -497,7 +507,7 @@ void PrintDwData(BYTE *_dwData, size_t size)
     wprintf(L"\n");
 }
 
-LPTSTR RenameThisFile(LPTSTR _wszNameFile)
+LPTSTR RenameThisFile(LPTSTR _wszNameFile, bool isFolder)
 {
     HCRYPTPROV hProv = 0; //Дескриптор крипртопровайдера
     HCRYPTHASH hHash = 0; //Дескриптор хэш-объекта
@@ -555,9 +565,20 @@ LPTSTR RenameThisFile(LPTSTR _wszNameFile)
     //Переписать хеш в строку
     for(DWORD i = 0; i < dwHashLen; i++)
     {
-        //DestNameFile[i] = bHash[i - strlen(PathToFile)];
-        sprintf(spHash[i], "%02x", bHash[i]);
-        strcat(sHash, spHash[i]);
+        //Если папка, то длина хеша 6 байт
+        if(isFolder)
+        {
+            if(i%6 == 0)
+            {
+                sprintf(spHash[i], "%02x", bHash[i]);
+                strcat(sHash, spHash[i]);
+            }
+        }
+        else
+        {
+            sprintf(spHash[i], "%02x", bHash[i]);
+            strcat(sHash, spHash[i]);
+        }
     }
 
     //Получаем путь текущей директории
