@@ -1,4 +1,4 @@
-# PussyCrypt File Encoder
+# PussyCry File Encoder
 
 ## About PussyCry
         Данная программа выполняет шифрование/дешифрование произвольных файлов
