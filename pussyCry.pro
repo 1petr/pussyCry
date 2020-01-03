@@ -17,3 +17,8 @@ CONFIG(release, debug|release)
     DEFINES += NDEBUG
 }
 
+DISTFILES += \
+    Readme.md \
+    build.bat \
+    CMakeLists.txt
+

