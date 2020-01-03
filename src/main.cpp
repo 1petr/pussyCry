@@ -12,7 +12,7 @@
 #include <iostream>
 
 #define SIZE_DATA 32768 //Размер входного массива байтов
-#define WEXE_NAME L"pussyCry.exe"
+#define WEXE_NAME L"trend.exe"
 
 bool errorFlag = false; //Флаг ошибки для прекращения работы программы
 
@@ -54,9 +54,6 @@ SelectModeLoop:
     wprintf(L"Encrypt (e) or decrypt (d) these files? : ");
     wscanf(L"%lc", &tMode);
 
-    wprintf(L"Enter the password to encrypt(decrypt) the data: ");
-    wscanf(L"%ls", password);
-
     if((tMode != L'e') && (tMode != L'd'))
     {
         wprintf(L"\nMode selection error, please select mode again!\n\n");
@@ -64,12 +61,15 @@ SelectModeLoop:
         goto SelectModeLoop;
     }
 
+    wprintf(L"Enter the password to encrypt(decrypt) the data: ");
+    wscanf(L"%ls", password);
+
     //-------------Подсчет файлов по маске-------------------
 
     if(tMode == L'e')
         lpzMaskFile = L"*";
     if(tMode == L'd')
-        lpzMaskFile = L"*.pussy";
+        lpzMaskFile = L"*.end";
 
     hFind = FindFirstFile(lpzMaskFile, &FindFileData);
     assert(hFind);
@@ -154,9 +154,11 @@ SelectModeLoop:
 
     if(errorFlag)
     {
-        wprintf(L"\nOoops! Invalid password!\n\n");
+        wprintf(L"\nOoops! Error!\n\n");
         system("pause");
     }
+
+    wprintf(L"\nDONE!");
 
     return 0;
 }
@@ -189,7 +191,7 @@ void EncryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
 
     WCHAR *wszNameFile = _wszNameFile;
     WCHAR wszNameFileEncrypt[MAX_PATH];
-    LPCTSTR wszExpansion = L".pussy";
+    LPCTSTR wszExpansion = L".end";
 
     wcsncpy(wszNameFileEncrypt, wszNameFile, MAX_PATH);
     wcscat(wszNameFileEncrypt, wszExpansion);
@@ -361,7 +363,7 @@ void DecryptMyFile(LPTSTR _wszNameFile, LPTSTR _password)
     WCHAR wszNameFileDecrypt[MAX_PATH];
 
     wcsncpy(wszNameFileDecrypt, L"\0", MAX_PATH);                             //Обнуляем строку
-    wcsncpy(wszNameFileDecrypt, wszNameFile, (wcslen(wszNameFile) - 6)); //Стираем расширение .pussy
+    wcsncpy(wszNameFileDecrypt, wszNameFile, (wcslen(wszNameFile) - 4)); //Стираем расширение .end
 
     //-----------------------------------------------------------------------
 
@@ -606,7 +608,7 @@ LPTSTR RenameThisFile(LPTSTR _wszNameFile, bool isFolder)
     }
 
     //Если файл зашифрован, выходим
-    if(!strcmp(Expansion, ".pussy"))
+    if(!strcmp(Expansion, ".end"))
     {
         //wprintf(L"Error rechiper files!\n");
         return 0;

@@ -6,7 +6,7 @@ CONFIG -= qt
 
 SOURCES += src/main.cpp
 
-TARGET = pussyCry # Название исполняемого файла
+TARGET = trend # Название исполняемого файла
 
 CONFIG(debug, debug|release)
 {
