@@ -1,0 +1,6 @@
+*.pro.user
+*.txt.user
+*.user
+*.autosave
+Makefile
+/build
